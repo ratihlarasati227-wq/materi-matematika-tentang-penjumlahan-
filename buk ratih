@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Matematika Buah Ceria</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Font Google: Fredoka & Nunito -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pinky: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                        },
+                        redy: {
+                            400: '#f87171',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                        }
+                    },
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        nunito: ['Nunito', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .font-title {
+            font-family: 'Fredoka', cursive;
+        }
+        /* Custom Bounce & Floating Animations */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+        .animate-float {
+            animation: floatSlow 3s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(244, 63, 94, 0.8); }
+        }
+        .glow-pink {
+            animation: pulseGlow 2s infinite;
+        }
+        .btn-pop {
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+        }
+        .btn-pop:active {
+            transform: scale(0.92);
+        }
+        /* Canvas positioning for particles */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-rose-100 to-pink-200 min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden relative">
+
+    <canvas id="particleCanvas"></canvas>
+
+    <!-- Top Header Navigation -->
+    <header class="w-full max-w-4xl mx-auto p-4 flex justify-between items-center z-10">
+        <div class="flex items-center space-x-3 bg-white/80 backdrop-blur border-2 border-pink-300 px-4 py-2 rounded-full shadow-md">
+            <div class="w-9 h-9 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold font-title text-xl shadow">
+                🍓
+            </div>
+            <div>
+                <p class="text-xs font-bold text-pink-500 uppercase tracking-wider">Skor Kamu</p>
+                <p id="scoreDisplay" class="text-xl font-extrabold text-rose-600 font-title leading-none">0</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <!-- Sound Toggle Button -->
+            <button id="soundBtn" onclick="toggleSound()" class="bg-white/80 border-2 border-pink-300 p-2.5 rounded-full shadow-md text-pink-600 hover:bg-pink-50 btn-pop">
+                <svg id="soundIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728M11 5L6 9H2v6h4l5 4V5z"/>
+                </svg>
+            </button>
+            <!-- Home Button -->
+            <button onclick="showMainMenu()" class="bg-rose-500 hover:bg-rose-600 border-2 border-rose-600 text-white p-2.5 rounded-full shadow-md btn-pop flex items-center justify-center">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="w-full max-w-3xl mx-auto px-4 py-2 flex-1 flex flex-col justify-center items-center z-10">
+
+        <!-- SCREEN 1: MAIN MENU -->
+        <div id="menuScreen" class="w-full text-center space-y-6">
+            <div class="relative inline-block">
+                <div class="absolute -top-6 -right-6 animate-bounce text-4xl">🍎</div>
+                <div class="absolute -bottom-4 -left-6 animate-float text-4xl">🍒</div>
+                <h1 class="font-title text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 via-pink-600 to-red-500 drop-shadow-sm">
+                    Petualangan Matematika
+                </h1>
+                <p class="text-rose-500 font-bold text-lg mt-1">Kelas 2 SD • Belajar Sambil Bermain Buah!</p>
+            </div>
+
+            <!-- Mode Selector Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                <!-- Mode 1 -->
+                <button onclick="startGame('count')" class="bg-white border-4 border-pink-300 hover:border-pink-500 rounded-3xl p-5 shadow-lg hover:shadow-xl btn-pop flex items-center space-x-4 group text-left">
+                    <div class="bg-pink-100 p-4 rounded-2xl group-hover:scale-110 transition-transform">
+                        <span class="text-4xl">🍓</span>
+                    </div>
+                    <div>
+                        <h3 class="font-title text-xl font-bold text-rose-600">1. Hitung Buah</h3>
+                        <p class="text-xs text-slate-500 font-semibold">Hitung banyak buah segar di layar!</p>
+                    </div>
+                </button>
+
+                <!-- Mode 2 -->
+                <button onclick="startGame('addsub')" class="bg-white border-4 border-rose-300 hover:border-rose-500 rounded-3xl p-5 shadow-lg hover:shadow-xl btn-pop flex items-center space-x-4 group text-left">
+                    <div class="bg-rose-100 p-4 rounded-2xl group-hover:scale-110 transition-transform">
+                        <span class="text-4xl">🍎</span>
+                    </div>
+                    <div>
+                        <h3 class="font-title text-xl font-bold text-rose-600">2. Tambah & Kurang</h3>
+                        <p class="text-xs text-slate-500 font-semibold">Penjumlahan & Pengurangan ceria!</p>
+                    </div>
+                </button>
+
+                <!-- Mode 3 -->
+                <button onclick="startGame('compare')" class="bg-white border-4 border-red-300 hover:border-red-500 rounded-3xl p-5 shadow-lg hover:shadow-xl btn-pop flex items-center space-x-4 group text-left">
+                    <div class="bg-red-100 p-4 rounded-2xl group-hover:scale-110 transition-transform">
+                        <span class="text-4xl">🍉</span>
+                    </div>
+                    <div>
+                        <h3 class="font-title text-xl font-bold text-rose-600">3. Pilih Keranjang</h3>
+                        <p class="text-xs text-slate-500 font-semibold">Bandingkan jumlah buah mana lebih banyak!</p>
+                    </div>
+                </button>
+
+                <!-- Mode 4 -->
+                <button onclick="startGame('group')" class="bg-white border-4 border-pink-400 hover:border-pink-600 rounded-3xl p-5 shadow-lg hover:shadow-xl btn-pop flex items-center space-x-4 group text-left">
+                    <div class="bg-pink-100 p-4 rounded-2xl group-hover:scale-110 transition-transform">
+                        <span class="text-4xl">🍒</span>
+                    </div>
+                    <div>
+                        <h3 class="font-title text-xl font-bold text-rose-600">4. Kelompok Buah</h3>
+                        <p class="text-xs text-slate-500 font-semibold">Konsep awal perkalian & piring buah!</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: GAMEPLAY ARENA -->
+        <div id="gameScreen" class="w-full hidden flex-col items-center">
+            
+            <!-- Question Card -->
+            <div class="w-full bg-white/90 backdrop-blur border-4 border-pink-300 rounded-3xl p-6 shadow-xl text-center relative mb-6">
+                <!-- Stars Indicator -->
+                <div class="flex justify-center items-center space-x-1 mb-2">
+                    <span id="qProgress" class="bg-pink-100 text-pink-600 text-xs font-bold px-3 py-1 rounded-full border border-pink-300">Soal 1 dari 5</span>
+                </div>
+
+                <h2 id="questionText" class="font-title text-2xl md:text-3xl text-rose-700 font-extrabold mb-4">
+                    Berapa jumlah buah Stroberi di bawah ini?
+                </h2>
+
+                <!-- Visual Fruits Playground -->
+                <div id="fruitStage" class="bg-gradient-to-b from-pink-50 to-rose-50 border-2 border-dashed border-pink-300 rounded-2xl p-4 min-h-[160px] flex flex-wrap items-center justify-center gap-3 transition-all">
+                    <!-- Fruits SVGs/Emojis will be injected here dynamically -->
+                </div>
+            </div>
+
+            <!-- Answer Options Grid -->
+            <div id="optionsContainer" class="w-full grid grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Buttons dynamically generated -->
+            </div>
+        </div>
+
+        <!-- SCREEN 3: RESULT / CELEBRATION -->
+        <div id="resultScreen" class="w-full hidden text-center space-y-6">
+            <div class="bg-white border-4 border-pink-400 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                <div class="text-6xl mb-2 animate-bounce">🏆</div>
+                <h2 class="font-title text-3xl md:text-4xl font-extrabold text-rose-600">Horeee! Kamu Hebat!</h2>
+                <p class="text-slate-600 font-semibold mt-2">Kamu berhasil menyelesaikan kuis ini!</p>
+
+                <div class="my-6 p-4 bg-pink-50 rounded-2xl border-2 border-pink-200 inline-block min-w-[200px]">
+                    <p class="text-sm font-bold text-pink-500 uppercase">Total Skor</p>
+                    <p id="finalScore" class="font-title text-5xl font-black text-rose-600">100</p>
+                </div>
+
+                <div class="flex justify-center gap-4">
+                    <button onclick="showMainMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-6 py-3 rounded-2xl btn-pop border-2 border-slate-300">
+                        Pilih Menu
+                    </button>
+                    <button id="replayBtn" onclick="restartCurrentGame()" class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-title text-lg px-8 py-3 rounded-2xl shadow-lg btn-pop border-2 border-rose-600">
+                        Main Lagi 🔄
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Feedback Banner / Modal Overlay -->
+    <div id="feedbackToast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 transform -translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div id="toastInner" class="bg-emerald-500 text-white font-title text-2xl px-8 py-4 rounded-3xl shadow-2xl border-4 border-white flex items-center space-x-3">
+            <span id="toastIcon">🎉</span>
+            <span id="toastText">Hebat! Jawabanmu Benar!</span>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-3 text-xs font-bold text-pink-600/70 z-10">
+        Game Pembelajaran Matematika SD Kelas 2 • Tema Pink & Buah Ceria
+    </footer>
+
+    <script>
+        // --- GAME STATE ---
+        let currentMode = '';
+        let currentQuestionIndex = 0;
+        let totalQuestions = 5;
+        let score = 0;
+        let currentAnswer = null;
+        let soundEnabled = true;
+        let synth = null;
+
+        // Initialize Audio Synth using Tone.js
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                synth = new Tone.Synth().toDestination();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'correct') {
+                    synth.triggerAttackRelease("C5", "8n", now);
+                    synth.triggerAttackRelease("E5", "8n", now + 0.1);
+                    synth.triggerAttackRelease("G5", "8n", now + 0.2);
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease("A3", "8n", now);
+                    synth.triggerAttackRelease("F3", "8n", now + 0.15);
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease("G4", "16n", now);
+                } else if (type === 'win') {
+                    synth.triggerAttackRelease("C5", "8n", now);
+                    synth.triggerAttackRelease("G5", "8n", now + 0.15);
+                    synth.triggerAttackRelease("C6", "4n", now + 0.3);
+                }
+            } catch (e) {
+                console.log("Audio not allowed yet");
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const soundBtn = document.getElementById('soundBtn');
+            if (soundEnabled) {
+                soundBtn.classList.remove('opacity-50');
+                playSound('click');
+            } else {
+                soundBtn.classList.add('opacity-50');
+            }
+        }
+
+        // --- SVG FRUIT DEFINITIONS ---
+        const FRUITS = {
+            strawberry: {
+                name: 'Stroberi',
+                emoji: '🍓',
+                svg: `<svg class="w-12 h-12 md:w-16 md:h-16 inline-block drop-shadow animate-float" viewBox="0 0 64 64">
+                    <path d="M32 58C32 58 52 42 52 26C52 14 42 10 32 16C22 10 12 14 12 26C12 42 32 58 32 58Z" fill="#EF4444"/>
+                    <path d="M32 16C28 10 20 10 16 14C12 18 16 22 24 20C28 19 32 16 32 16Z" fill="#22C55E"/>
+                    <path d="M32 16C36 10 44 10 48 14C52 18 48 22 40 20C36 19 32 16 32 16Z" fill="#15803D"/>
+                    <circle cx="24" cy="28" r="1.5" fill="#FEF08A"/>
+                    <circle cx="34" cy="32" r="1.5" fill="#FEF08A"/>
+                    <circle cx="40" cy="26" r="1.5" fill="#FEF08A"/>
+                    <circle cx="28" cy="40" r="1.5" fill="#FEF08A"/>
+                    <circle cx="36" cy="44" r="1.5" fill="#FEF08A"/>
+                </svg>`
+            },
+            apple: {
+                name: 'Apel Red',
+                emoji: '🍎',
+                svg: `<svg class="w-12 h-12 md:w-16 md:h-16 inline-block drop-shadow animate-float" viewBox="0 0 64 64">
+                    <path d="M32 18C26 12 14 14 14 28C14 46 28 54 32 54C36 54 50 46 50 28C50 14 38 12 32 18Z" fill="#DC2626"/>
+                    <path d="M32 18C30 10 34 6 34 6" stroke="#78350F" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M33 12C38 8 44 10 44 10C44 10 42 16 35 15Z" fill="#22C55E"/>
+                    <circle cx="24" cy="26" r="3" fill="#FCA5A5" opacity="0.6"/>
+                </svg>`
+            },
+            cherry: {
+                name: 'Ceri',
+                emoji: '🍒',
+                svg: `<svg class="w-12 h-12 md:w-16 md:h-16 inline-block drop-shadow animate-float" viewBox="0 0 64 64">
+                    <circle cx="20" cy="42" r="12" fill="#E11D48"/>
+                    <circle cx="44" cy="38" r="12" fill="#BE123C"/>
+                    <path d="M20 30C24 16 34 10 34 10" stroke="#15803D" stroke-width="3" fill="none"/>
+                    <path d="M44 26C40 16 34 10 34 10" stroke="#15803D" stroke-width="3" fill="none"/>
+                    <path d="M34 10C40 6 46 8 46 8C46 8 44 14 36 12Z" fill="#22C55E"/>
+                    <circle cx="16" cy="38" r="2.5" fill="#FFE4E6"/>
+                    <circle cx="40" cy="34" r="2.5" fill="#FFE4E6"/>
+                </svg>`
+            },
+            watermelon: {
+                name: 'Semangka',
+                emoji: '🍉',
+                svg: `<svg class="w-12 h-12 md:w-16 md:h-16 inline-block drop-shadow animate-float" viewBox="0 0 64 64">
+                    <path d="M10 24C10 24 32 56 54 24H10Z" fill="#EF4444"/>
+                    <path d="M8 22C8 22 32 58 56 22" stroke="#15803D" stroke-width="5" fill="none"/>
+                    <path d="M10 24C10 24 32 54 54 24" stroke="#BBF7D0" stroke-width="2" fill="none"/>
+                    <circle cx="24" cy="30" r="1.5" fill="#000"/>
+                    <circle cx="32" cy="36" r="1.5" fill="#000"/>
+                    <circle cx="40" cy="30" r="1.5" fill="#000"/>
+                </svg>`
+            },
+            dragonfruit: {
+                name: 'Buah Naga',
+                emoji: '🪷',
+                svg: `<svg class="w-12 h-12 md:w-16 md:h-16 inline-block drop-shadow animate-float" viewBox="0 0 64 64">
+                    <path d="M32 10C18 10 14 26 14 38C14 50 22 56 32 56C42 56 50 50 50 38C50 26 46 10 32 10Z" fill="#F43F5E"/>
+                    <path d="M32 10C28 18 20 22 20 22C26 26 32 20 32 20" fill="#22C55E"/>
+                    <path d="M50 38C40 38 38 48 38 48C44 46 50 38 50 38Z" fill="#22C55E"/>
+                    <path d="M14 38C24 38 26 48 26 48C20 46 14 38 14 38Z" fill="#22C55E"/>
+                    <circle cx="32" cy="34" r="10" fill="#FFF1F2"/>
+                    <circle cx="28" cy="32" r="1" fill="#000"/>
+                    <circle cx="34" cy="30" r="1" fill="#000"/>
+                    <circle cx="32" cy="38" r="1" fill="#000"/>
+                    <circle cx="36" cy="35" r="1" fill="#000"/>
+                </svg>`
+            }
+        };
+
+        const fruitKeys = Object.keys(FRUITS);
+
+        // --- STREAMING_CHUNK:Generating math problems and SVG fruit components... ---
+        // NAVIGATION FUNCTIONS
+        function showMainMenu() {
+            playSound('click');
+            document.getElementById('menuScreen').classList.remove('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+        }
+
+        function startGame(mode) {
+            playSound('click');
+            currentMode = mode;
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScoreDisplay();
+
+            document.getElementById('menuScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('resultScreen').classList.add('hidden');
+
+            loadNextQuestion();
+        }
+
+        function restartCurrentGame() {
+            startGame(currentMode);
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('scoreDisplay').innerText = score;
+        }
+
+        // QUESTION GENERATORS FOR GRADE 2
+        function loadNextQuestion() {
+            if (currentQuestionIndex >= totalQuestions) {
+                showResultScreen();
+                return;
+            }
+
+            document.getElementById('qProgress').innerText = `Soal ${currentQuestionIndex + 1} dari ${totalQuestions}`;
+            const fruitStage = document.getElementById('fruitStage');
+            const questionText = document.getElementById('questionText');
+            const optionsContainer = document.getElementById('optionsContainer');
+
+            fruitStage.innerHTML = '';
+            optionsContainer.innerHTML = '';
+
+            const randomFruitKey = fruitKeys[Math.floor(Math.random() * fruitKeys.length)];
+            const fruitObj = FRUITS[randomFruitKey];
+
+            let options = [];
+
+            if (currentMode === 'count') {
+                // Mode 1: Hitung Buah (1 - 20)
+                const count = Math.floor(Math.random() * 12) + 4; // 4 to 15
+                currentAnswer = count;
+
+                questionText.innerHTML = `Berapa jumlah buah <span class="text-rose-600">${fruitObj.name}</span> di bawah ini?`;
+
+                for (let i = 0; i < count; i++) {
+                    const fruitWrapper = document.createElement('div');
+                    fruitWrapper.className = 'transform hover:scale-125 transition-transform duration-200 cursor-pointer p-1';
+                    fruitWrapper.innerHTML = fruitObj.svg;
+                    fruitStage.appendChild(fruitWrapper);
+                }
+
+                options = generateOptions(currentAnswer, 4, 1, 20);
+
+            } else if (currentMode === 'addsub') {
+                // Mode 2: Tambah & Kurang (Kelas 2)
+                const isAddition = Math.random() > 0.4; // 60% addition
+
+                if (isAddition) {
+                    const num1 = Math.floor(Math.random() * 10) + 1;
+                    const num2 = Math.floor(Math.random() * 10) + 1;
+                    currentAnswer = num1 + num2;
+
+                    questionText.innerHTML = `<span class="text-rose-600">${num1}</span> + <span class="text-rose-600">${num2}</span> = Berapa buah?`;
+
+                    // Group 1
+                    const g1 = document.createElement('div');
+                    g1.className = 'flex flex-wrap gap-1 border-2 border-pink-200 bg-white/70 p-2 rounded-xl justify-center items-center';
+                    for (let i = 0; i < num1; i++) g1.innerHTML += fruitObj.svg;
+
+                    // Plus Sign
+                    const plus = document.createElement('div');
+                    plus.className = 'font-title text-4xl text-rose-500 font-bold px-2';
+                    plus.innerText = '+';
+
+                    // Group 2
+                    const g2 = document.createElement('div');
+                    g2.className = 'flex flex-wrap gap-1 border-2 border-pink-200 bg-white/70 p-2 rounded-xl justify-center items-center';
+                    for (let i = 0; i < num2; i++) g2.innerHTML += fruitObj.svg;
+
+                    fruitStage.appendChild(g1);
+                    fruitStage.appendChild(plus);
+                    fruitStage.appendChild(g2);
+
+                } else {
+                    // Subtraction
+                    const num1 = Math.floor(Math.random() * 10) + 5; // 5 to 14
+                    const num2 = Math.floor(Math.random() * (num1 - 1)) + 1; // less than num1
+                    currentAnswer = num1 - num2;
+
+                    questionText.innerHTML = `<span class="text-rose-600">${num1}</span> dikurangi <span class="text-rose-600">${num2}</span> sisa berapa?`;
+
+                    for (let i = 0; i < num1; i++) {
+                        const fruitWrapper = document.createElement('div');
+                        fruitWrapper.className = 'relative p-1';
+                        fruitWrapper.innerHTML = fruitObj.svg;
+                        
+                        // Cross out deducted fruits
+                        if (i >= num1 - num2) {
+                            fruitWrapper.innerHTML += `<div class="absolute inset-0 flex items-center justify-center font-extrabold text-red-600 text-3xl select-none">❌</div>`;
+                            fruitWrapper.classList.add('opacity-50');
+                        }
+                        fruitStage.appendChild(fruitWrapper);
+                    }
+                }
+
+                options = generateOptions(currentAnswer, 4, 1, 25);
+
+            } else if (currentMode === 'compare') {
+                // Mode 3: Membandingkan (Lebih Banyak / Lebih Sedikit / Sama Banyak)
+                const countA = Math.floor(Math.random() * 8) + 3;
+                let countB = Math.floor(Math.random() * 8) + 3;
+                
+                // Allow occasional equality
+                if (Math.random() < 0.25) countB = countA;
+
+                const fruitA = FRUITS[fruitKeys[0]];
+                const fruitB = FRUITS[fruitKeys[1]];
+
+                questionText.innerHTML = `Keranjang <span class="text-rose-600">A</span> dibanding Keranjang <span class="text-rose-600">B</span> adalah...?`;
+
+                if (countA > countB) currentAnswer = 'Lebih Banyak';
+                else if (countA < countB) currentAnswer = 'Lebih Sedikit';
+                else currentAnswer = 'Sama Banyak';
+
+                // Basket A
+                const basketA = document.createElement('div');
+                basketA.className = 'flex-1 bg-white/90 border-4 border-pink-300 p-3 rounded-2xl flex flex-col items-center min-w-[130px]';
+                basketA.innerHTML = `<span class="font-title text-rose-600 font-bold text-lg mb-1">Keranjang A (${countA})</span><div class="flex flex-wrap justify-center gap-1"></div>`;
+                const divA = basketA.querySelector('div');
+                for (let i = 0; i < countA; i++) divA.innerHTML += fruitA.svg;
+
+                // Basket B
+                const basketB = document.createElement('div');
+                basketB.className = 'flex-1 bg-white/90 border-4 border-rose-300 p-3 rounded-2xl flex flex-col items-center min-w-[130px]';
+                basketB.innerHTML = `<span class="font-title text-rose-600 font-bold text-lg mb-1">Keranjang B (${countB})</span><div class="flex flex-wrap justify-center gap-1"></div>`;
+                const divB = basketB.querySelector('div');
+                for (let i = 0; i < countB; i++) divB.innerHTML += fruitB.svg;
+
+                fruitStage.appendChild(basketA);
+                fruitStage.appendChild(basketB);
+
+                options = ['Lebih Banyak', 'Lebih Sedikit', 'Sama Banyak'];
+
+            } else if (currentMode === 'group') {
+                // Mode 4: Perkalian Dasar / Pengelompokan (e.g. 3 piring, masing-masing 2 buah)
+                const numGroups = Math.floor(Math.random() * 3) + 2; // 2, 3, or 4 plates
+                const itemsPerGroup = Math.floor(Math.random() * 3) + 2; // 2, 3, or 4 fruits per plate
+                currentAnswer = numGroups * itemsPerGroup;
+
+                questionText.innerHTML = `Ada <span class="text-rose-600">${numGroups} piring</span>. Setiap piring berisi <span class="text-rose-600">${itemsPerGroup} buah</span>. Berapa totalnya?`;
+
+                for (let g = 0; g < numGroups; g++) {
+                    const plate = document.createElement('div');
+                    plate.className = 'bg-white border-4 border-pink-300 rounded-full p-3 shadow-md flex items-center justify-center gap-1 min-w-[90px] min-h-[90px]';
+                    for (let i = 0; i < itemsPerGroup; i++) {
+                        plate.innerHTML += fruitObj.svg;
+                    }
+                    fruitStage.appendChild(plate);
+                }
+
+                options = generateOptions(currentAnswer, 4, 2, 20);
+            }
+
+            // Render Answer Buttons
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-white hover:bg-rose-50 border-4 border-pink-300 hover:border-rose-500 font-title text-2xl md:text-3xl text-rose-600 font-bold py-4 px-2 rounded-2xl shadow-md hover:shadow-lg btn-pop text-center transition-all';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(opt);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // GENERATE RANDOM OPTIONS WITH NO DUPLICATES
+        function generateOptions(correct, count, min, max) {
+            const opts = new Set();
+            opts.add(correct);
+            while (opts.size < count) {
+                let rand = Math.floor(Math.random() * (max - min + 1)) + min;
+                if (rand > 0) opts.add(rand);
+            }
+            return Array.from(opts).sort((a, b) => a - b);
+        }
+
+        // CHECK ANSWER & SHOW FEEDBACK
+        function checkAnswer(selectedOpt) {
+            const isCorrect = (selectedOpt === currentAnswer);
+
+            if (isCorrect) {
+                score += 20;
+                updateScoreDisplay();
+                playSound('correct');
+                showToast(true, 'Hebat! Jawabanmu Benar! 🎉');
+                triggerParticles();
+            } else {
+                playSound('wrong');
+                showToast(false, `Kurang Tepat! Jawaban yang benar: ${currentAnswer} 💪`);
+            }
+
+            currentQuestionIndex++;
+            setTimeout(() => {
+                loadNextQuestion();
+            }, 1600);
+        }
+
+        // SHOW FEEDBACK TOAST
+        function showToast(isSuccess, message) {
+            const toast = document.getElementById('feedbackToast');
+            const toastInner = document.getElementById('toastInner');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastText = document.getElementById('toastText');
+
+            toastText.innerText = message;
+            if (isSuccess) {
+                toastInner.className = "bg-emerald-500 text-white font-title text-xl md:text-2xl px-6 py-3 rounded-3xl shadow-2xl border-4 border-white flex items-center space-x-3";
+                toastIcon.innerText = "🍓";
+            } else {
+                toastInner.className = "bg-rose-600 text-white font-title text-xl md:text-2xl px-6 py-3 rounded-3xl shadow-2xl border-4 border-white flex items-center space-x-3";
+                toastIcon.innerText = "💡";
+            }
+
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 1400);
+        }
+
+        // RESULT SCREEN
+        function showResultScreen() {
+            playSound('win');
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('resultScreen').classList.remove('hidden');
+            document.getElementById('finalScore').innerText = score;
+            triggerParticles();
+        }
+
+        // SIMPLE CONFETTI / PARTICLE CANVAS SYSTEM
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerParticles() {
+            const colors = ['#f43f5e', '#ef4444', '#fb7185', '#fecdd3', '#22c55e', '#facc15'];
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.8) * 12,
+                    size: Math.random() * 8 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: 1,
+                    life: Math.random() * 40 + 30
+                });
+            }
+        }
+
+        function updateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.3; // gravity
+                p.alpha -= 0.02;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(updateParticles);
+        }
+        updateParticles();
+    </script>
+</body>
+</html>
